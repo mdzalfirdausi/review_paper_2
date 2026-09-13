@@ -16,8 +16,9 @@ env/
 .DS_Store
 Thumbs.db
 
-# Generated / downloaded data
+# Generated / downloaded data or output
 data/
+output/
 
 # Temporary files
 *.tmp
