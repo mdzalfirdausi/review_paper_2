@@ -23,4 +23,7 @@ output/
 # Temporary files
 *.tmp
 *.log
-~$*notebooks/2.topic_modeling.ipynb
+~$*
+
+# Local notebook not tracked by Git
+notebooks/2.topic_modeling.ipynb
