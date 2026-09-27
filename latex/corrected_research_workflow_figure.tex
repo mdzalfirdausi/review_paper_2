@@ -1,0 +1,726 @@
+\begin{figure*}[t]
+\centering
+
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    font=\sffamily,
+    >=Latex,
+    dataBox/.style={
+        draw=wfBlue,
+        fill=wfBlueLight,
+        line width=0.8pt,
+        rounded corners=2pt,
+        text width=4.5cm,
+        minimum height=3.1cm,
+        inner sep=7pt,
+        align=left
+    },
+    patentBox/.style={
+        draw=wfOrange,
+        fill=wfOrangeLight,
+        line width=0.8pt,
+        rounded corners=2pt,
+        text width=5.0cm,
+        minimum height=3.1cm,
+        inner sep=7pt,
+        align=left
+    },
+    policyBox/.style={
+        draw=wfPurple,
+        fill=wfPurpleLight,
+        line width=0.8pt,
+        rounded corners=2pt,
+        text width=5.0cm,
+        minimum height=3.1cm,
+        inner sep=7pt,
+        align=left
+    },
+    analysisBox/.style={
+        draw=wfTeal,
+        fill=wfTealLight,
+        line width=0.8pt,
+        rounded corners=2pt,
+        text width=5.0cm,
+        minimum height=3.0cm,
+        inner sep=7pt,
+        align=left
+    },
+    compareBox/.style={
+        draw=wfTealDark,
+        fill=white,
+        line width=0.9pt,
+        rounded corners=2pt,
+        text width=5.0cm,
+        minimum height=3.0cm,
+        inner sep=7pt,
+        align=left
+    },
+    outputBox/.style={
+        draw=wfOrangeDark,
+        fill=wfOrangeLight,
+        line width=1pt,
+        rounded corners=2pt,
+        text width=7.2cm,
+        minimum height=2.8cm,
+        inner sep=7pt,
+        align=center
+    },
+    blueArrow/.style={
+        ->,
+        draw=wfBlueDark,
+        line width=1.3pt
+    },
+    patentArrow/.style={
+        ->,
+        draw=wfOrangeDark,
+        line width=1.3pt
+    },
+    policyArrow/.style={
+        ->,
+        draw=wfPurpleDark,
+        line width=1.3pt
+    },
+    analysisArrow/.style={
+        ->,
+        draw=wfTealDark,
+        line width=1.3pt
+    },
+    outputArrow/.style={
+        ->,
+        draw=wfOrangeDark,
+        line width=1.3pt
+    }
+]
+
+% ============================================================
+% BLOCK A — SCHOLARLY CORPUS CONSTRUCTION
+% ============================================================
+
+\node[
+    anchor=west,
+    fill=wfBlue,
+    text=white,
+    rounded corners=2pt,
+    font=\bfseries\small,
+    inner xsep=9pt,
+    inner ysep=5pt
+] (blockA) at (-2.5,2.1)
+{BLOCK A --- SCHOLARLY CORPUS CONSTRUCTION};
+
+
+\node[dataBox] (scopus) at (0,0)
+{
+    {\color{wfBlueDark}\bfseries\large A1}
+    \hfill
+    {\color{wfGray}\scriptsize SEARCH}
+
+    \vspace{3pt}
+
+    {\bfseries Scopus Literature Retrieval}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    \textbf{Database:} Scopus
+
+    \vspace{3pt}
+
+    ML--OPF scholarly publications are identified using the
+    predefined literature-search strategy.
+
+    \vspace{5pt}
+
+    Titles, abstracts, publication years, authors,
+    keywords, and DOIs are retained.
+    }
+};
+
+
+\node[dataBox, right=0.65cm of scopus] (clean)
+{
+    {\color{wfBlueDark}\bfseries\large A2}
+    \hfill
+    {\color{wfGray}\scriptsize CLEAN}
+
+    \vspace{3pt}
+
+    {\bfseries Data Cleaning}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    Records are checked for:
+
+    \vspace{4pt}
+
+    $\bullet$ duplicate publications
+
+    \vspace{2pt}
+
+    $\bullet$ title and abstract availability
+
+    \vspace{2pt}
+
+    $\bullet$ publication year
+
+    \vspace{2pt}
+
+    $\bullet$ DOI availability
+    }
+};
+
+
+\node[dataBox, right=0.65cm of clean] (doi)
+{
+    {\color{wfBlueDark}\bfseries\large A3}
+    \hfill
+    {\color{wfGray}\scriptsize DOI}
+
+    \vspace{3pt}
+
+    {\bfseries DOI Identification}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    DOIs provide the common identifier used to link scholarly
+    publications across Scopus, Lens, and Overton.
+
+    \vspace{7pt}
+
+    {\color{wfBlueDark}\bfseries
+    Common ML--OPF scholarly corpus}
+    }
+};
+
+
+\draw[blueArrow]
+(scopus.east) -- (clean.west);
+
+\draw[blueArrow]
+(clean.east) -- (doi.west);
+
+
+% ============================================================
+% BLOCK B — PATENT AND POLICY CITATION PATHWAYS
+% ============================================================
+
+\node[
+    anchor=west,
+    fill=wfGray,
+    text=white,
+    rounded corners=2pt,
+    font=\bfseries\small,
+    inner xsep=9pt,
+    inner ysep=5pt
+] (blockB) at (-2.5,-4.1)
+{BLOCK B --- PATENT AND POLICY CITATION PATHWAYS};
+
+
+\node[
+    patentBox,
+    below left=2.3cm and 0.20cm of doi
+] (lens)
+{
+    {\color{wfOrangeDark}\bfseries\large B1}
+    \hfill
+    {\color{wfGray}\scriptsize PATENTS}
+
+    \vspace{3pt}
+
+    {\bfseries Lens Patent-Citation Pathway}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    \textbf{Database:} Lens
+
+    \vspace{3pt}
+
+    Scopus DOIs identify scholarly publications cited by patents.
+
+    \vspace{7pt}
+
+    {\color{wfOrangeDark}\bfseries
+    Patent-cited scholarly publications}
+
+    \vspace{2pt}
+
+    {\color{wfOrangeDark}\bfseries
+    $N=778$}
+    }
+};
+
+
+\node[
+    policyBox,
+    below right=2.3cm and 0.20cm of doi
+] (overton)
+{
+    {\color{wfPurpleDark}\bfseries\large B2}
+    \hfill
+    {\color{wfGray}\scriptsize POLICY}
+
+    \vspace{3pt}
+
+    {\bfseries Overton Policy-Citation Pathway}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    \textbf{Database:} Overton
+
+    \vspace{3pt}
+
+    Scopus DOIs identify scholarly publications cited by policy documents.
+
+    \vspace{7pt}
+
+    {\color{wfPurpleDark}\bfseries
+    Policy-cited scholarly publications}
+
+    \vspace{2pt}
+
+    {\color{wfPurpleDark}\bfseries
+    $N=392$}
+    }
+};
+
+
+\draw[
+    patentArrow,
+    rounded corners=5pt
+]
+(doi.south)
+-- ++(0,-0.65cm)
+-| (lens.north);
+
+
+\draw[
+    policyArrow,
+    rounded corners=5pt
+]
+(doi.south)
+-- ++(0,-0.65cm)
+-| (overton.north);
+
+
+% ============================================================
+% BLOCK C — CORPUS-SPECIFIC TOPIC MODELING
+% ============================================================
+
+\node[
+    anchor=west,
+    fill=wfTeal,
+    text=white,
+    rounded corners=2pt,
+    font=\bfseries\small,
+    inner xsep=9pt,
+    inner ysep=5pt
+] (blockC) at (-2.5,-10.2)
+{BLOCK C --- CORPUS-SPECIFIC TOPIC MODELING};
+
+
+\node[
+    analysisBox,
+    below=2.1cm of lens
+] (patentdtm)
+{
+    {\color{wfTealDark}\bfseries\large C1}
+    \hfill
+    {\color{wfGray}\scriptsize DTM}
+
+    \vspace{3pt}
+
+    {\bfseries Patent-Cited Corpus}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    Identical abstract preprocessing.
+
+    \vspace{4pt}
+
+    \textbf{Final DTM}
+
+    778 documents
+
+    1,295 terms
+
+    Minimum DF = 8
+    }
+};
+
+
+\node[
+    analysisBox,
+    below=2.1cm of overton
+] (policydtm)
+{
+    {\color{wfTealDark}\bfseries\large C2}
+    \hfill
+    {\color{wfGray}\scriptsize DTM}
+
+    \vspace{3pt}
+
+    {\bfseries Policy-Cited Corpus}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    Identical abstract preprocessing.
+
+    \vspace{4pt}
+
+    \textbf{Final DTM}
+
+    392 documents
+
+    1,371 terms
+
+    Minimum DF = 4
+    }
+};
+
+
+\draw[analysisArrow]
+(lens.south) -- (patentdtm.north);
+
+\draw[analysisArrow]
+(overton.south) -- (policydtm.north);
+
+
+\node[
+    analysisBox,
+    below=0.75cm of patentdtm
+] (patentlda)
+{
+    {\color{wfTealDark}\bfseries\large C3}
+    \hfill
+    {\color{wfGray}\scriptsize LDA}
+
+    \vspace{3pt}
+
+    {\bfseries Patent-Cited LDA}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    Independent topic model.
+
+    \vspace{4pt}
+
+    Topic-number selection:
+
+    $\bullet$ held-out perplexity
+
+    $\bullet$ semantic coherence
+
+    $\bullet$ topic similarity
+
+    $\bullet$ interpretability
+    }
+};
+
+
+\node[
+    analysisBox,
+    below=0.75cm of policydtm
+] (policylda)
+{
+    {\color{wfTealDark}\bfseries\large C4}
+    \hfill
+    {\color{wfGray}\scriptsize LDA}
+
+    \vspace{3pt}
+
+    {\bfseries Policy-Cited LDA}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    Independent topic model.
+
+    \vspace{4pt}
+
+    Topic-number selection:
+
+    $\bullet$ held-out perplexity
+
+    $\bullet$ semantic coherence
+
+    $\bullet$ topic similarity
+
+    $\bullet$ interpretability
+    }
+};
+
+
+\draw[analysisArrow]
+(patentdtm.south) -- (patentlda.north);
+
+\draw[analysisArrow]
+(policydtm.south) -- (policylda.north);
+
+
+\node[
+    analysisBox,
+    below=0.75cm of patentlda,
+    minimum height=2.0cm
+] (patenttopics)
+{
+    {\color{wfTealDark}\bfseries\large C5}
+    \hfill
+    {\color{wfGray}\scriptsize TOPICS}
+
+    \vspace{3pt}
+
+    {\bfseries Patent Topics}
+
+    \vspace{4pt}
+
+    {\scriptsize
+    Corpus-specific latent themes
+    }
+};
+
+
+\node[
+    analysisBox,
+    below=0.75cm of policylda,
+    minimum height=2.0cm
+] (policytopics)
+{
+    {\color{wfTealDark}\bfseries\large C6}
+    \hfill
+    {\color{wfGray}\scriptsize TOPICS}
+
+    \vspace{3pt}
+
+    {\bfseries Policy Topics}
+
+    \vspace{4pt}
+
+    {\scriptsize
+    Corpus-specific latent themes
+    }
+};
+
+
+\draw[analysisArrow]
+(patentlda.south) -- (patenttopics.north);
+
+\draw[analysisArrow]
+(policylda.south) -- (policytopics.north);
+
+
+% ============================================================
+% BLOCK D — CROSS-CORPUS INTERPRETATION
+% ============================================================
+
+\node[
+    anchor=west,
+    fill=wfTealDark,
+    text=white,
+    rounded corners=2pt,
+    font=\bfseries\small,
+    inner xsep=9pt,
+    inner ysep=5pt
+] (blockD) at (-2.5,-23.2)
+{BLOCK D --- CROSS-CORPUS INTERPRETATION \& COMPARISON};
+
+
+\node[
+    compareBox,
+    below=2.0cm of patenttopics
+] (interpret)
+{
+    {\color{wfTealDark}\bfseries\large D1}
+    \hfill
+    {\color{wfGray}\scriptsize INTERPRET}
+
+    \vspace{3pt}
+
+    {\bfseries Manual Interpretation}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    $\bullet$ highest-probability terms
+
+    \vspace{2pt}
+
+    $\bullet$ representative publications
+
+    \vspace{2pt}
+
+    $\bullet$ domain-informed validation
+    }
+};
+
+
+\node[
+    compareBox,
+    right=0.65cm of interpret
+] (mapping)
+{
+    {\color{wfTealDark}\bfseries\large D2}
+    \hfill
+    {\color{wfGray}\scriptsize MAPPING}
+
+    \vspace{3pt}
+
+    {\bfseries Cross-Corpus Mapping}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    Related patent and policy topics are organized into a
+    common thematic framework.
+
+    \vspace{5pt}
+
+    Topic numbers are not assumed to correspond directly.
+    }
+};
+
+
+\node[
+    compareBox,
+    right=0.65cm of mapping
+] (prevalence)
+{
+    {\color{wfTealDark}\bfseries\large D3}
+    \hfill
+    {\color{wfGray}\scriptsize PREVALENCE}
+
+    \vspace{3pt}
+
+    {\bfseries Thematic Prevalence}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    Document--topic probabilities are aggregated across
+    mapped themes.
+
+    \vspace{5pt}
+
+    Patent--policy differences are expressed in
+    percentage points.
+    }
+};
+
+
+\node[
+    compareBox,
+    right=0.65cm of prevalence
+] (temporal)
+{
+    {\color{wfTealDark}\bfseries\large D4}
+    \hfill
+    {\color{wfGray}\scriptsize TEMPORAL}
+
+    \vspace{3pt}
+
+    {\bfseries Temporal Comparison}
+
+    \vspace{6pt}
+
+    {\scriptsize
+    Annual probability-weighted prevalence is examined
+    together with annual publication coverage.
+
+    \vspace{5pt}
+
+    Theme evolution is compared over time.
+    }
+};
+
+
+\draw[
+    analysisArrow,
+    rounded corners=5pt
+]
+(patenttopics.south)
+-- ++(0,-0.65cm)
+-| (interpret.north);
+
+
+\draw[
+    analysisArrow,
+    rounded corners=5pt
+]
+(policytopics.south)
+-- ++(0,-0.65cm)
+-| (interpret.north);
+
+
+\draw[analysisArrow]
+(interpret.east) -- (mapping.west);
+
+\draw[analysisArrow]
+(mapping.east) -- (prevalence.west);
+
+\draw[analysisArrow]
+(prevalence.east) -- (temporal.west);
+
+
+% ============================================================
+% FINAL OUTPUT
+% ============================================================
+
+\node[
+    outputBox,
+    below=0.85cm of mapping
+] (output)
+{
+    {\color{wfOrangeDark}\bfseries
+    COMPARATIVE KNOWLEDGE-TRANSLATION PROFILE}
+
+    \vspace{7pt}
+
+    {\scriptsize
+    \textbf{Technology-facing themes}
+    \qquad
+    $\bullet$
+    \qquad
+    \textbf{Shared / bridge themes}
+
+    \vspace{4pt}
+
+    \textbf{Policy-facing themes}
+    }
+};
+
+
+\draw[
+    outputArrow,
+    rounded corners=4pt
+]
+(temporal.south)
+-- ++(0,-0.45cm)
+-| (output.east);
+
+
+\end{tikzpicture}%
+}
+
+\caption{
+Research workflow for the comparative analysis of patent-cited and
+policy-cited ML--OPF scholarly literature.
+Block A constructs the underlying Scopus scholarly corpus and identifies
+DOIs for cross-database linkage.
+Block B identifies patent-cited and policy-cited scholarly publications
+through Lens and Overton.
+Block C applies identical text preprocessing and corpus-specific
+document-term matrix construction before estimating independent LDA
+models.
+Block D interprets the resulting topics, maps related topics into a
+common thematic framework, and compares their probability-weighted
+prevalence and temporal evolution.
+}
+
+\label{fig:research_workflow}
+
+\end{figure*}
