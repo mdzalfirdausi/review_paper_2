@@ -18,6 +18,7 @@ Thumbs.db
 
 # Generated / downloaded data or output
 data/
+data_backup/
 output/
 
 # Temporary files
