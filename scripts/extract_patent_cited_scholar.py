@@ -11,13 +11,16 @@ import pandas as pd
 # project_root/
 # ├── data/
 # │   ├── lens/
-# │   │   └── lens_patent_cited_dois.txt
+# │   │   ├── lens_patent_cited_dois.txt
+# │   │   └── lenspatcite-export-....xlsx
 # │   ├── scopus/
 # │   │   └── scopus_full.xlsx
 # │   └── lda/
+# │       └── lens_from_scopus_scholar.xlsx
 # │
 # └── scripts/
 #     └── extract_patent_cited_scholar.py
+
 
 PROJECT_DIR = (
     Path(__file__)
@@ -26,11 +29,13 @@ PROJECT_DIR = (
     .parent
 )
 
+
 LENS_DIR = (
     PROJECT_DIR
     / "data"
     / "lens"
 )
+
 
 SCOPUS_DIR = (
     PROJECT_DIR
@@ -38,11 +43,13 @@ SCOPUS_DIR = (
     / "scopus"
 )
 
+
 LDA_DIR = (
     PROJECT_DIR
     / "data"
     / "lda"
 )
+
 
 LDA_DIR.mkdir(
     parents=True,
@@ -59,10 +66,22 @@ DOI_FILE = (
     / "lens_patent_cited_dois.txt"
 )
 
+
 SCOPUS_FILE = (
     SCOPUS_DIR
     / "scopus_full.xlsx"
 )
+
+
+LENS_EXPORT_FILE = (
+    LENS_DIR
+    / (
+        "lenspatcite-export-mdzalfirdausi-"
+        "52137fc2-30dc-4652-b8cb-a052ce9c5442-"
+        "2026-09-27_06-13-55.xlsx"
+    )
+)
+
 
 OUTPUT_FILE = (
     LDA_DIR
@@ -71,10 +90,10 @@ OUTPUT_FILE = (
 
 
 # =========================================================
-# Output columns
+# Scopus output columns
 # =========================================================
 
-OUTPUT_COLUMNS = [
+SCOPUS_OUTPUT_COLUMNS = [
     "Link",
     "Authors",
     "Author full names",
@@ -96,32 +115,83 @@ OUTPUT_COLUMNS = [
 
 
 # =========================================================
+# Lens columns
+# =========================================================
+
+LENS_EXTERNAL_ID_COLUMN = (
+    "citation external id"
+)
+
+
+LENS_PATENT_COUNT_COLUMN = (
+    "cited by patent count"
+)
+
+
+LENS_FAMILY_COUNT_COLUMN = (
+    "citing family count"
+)
+
+
+LENS_REQUIRED_COLUMNS = [
+    LENS_EXTERNAL_ID_COLUMN,
+    LENS_PATENT_COUNT_COLUMN,
+    LENS_FAMILY_COUNT_COLUMN,
+]
+
+
+# =========================================================
+# Final Lens-derived output columns
+# =========================================================
+
+LENS_OUTPUT_COLUMNS = [
+    "Patent citation count",
+    "Citing patent family count",
+]
+
+
+# =========================================================
 # DOI normalization
 # =========================================================
 
 def normalize_doi(value):
 
     if pd.isna(value):
+
         return None
 
-    doi = str(value).strip()
+
+    doi = str(
+        value
+    ).strip()
+
 
     if not doi:
+
         return None
 
-    # Remove DOI: prefix if present.
+
+    # -----------------------------------------------------
+    # Remove DOI: prefix
+    # -----------------------------------------------------
+
     doi = re.sub(
         r"(?i)^doi:\s*",
         "",
         doi,
     )
 
-    # Remove DOI URL if present.
+
+    # -----------------------------------------------------
+    # Remove DOI URL
+    # -----------------------------------------------------
+
     doi = re.sub(
         r"(?i)^https?://(?:dx\.)?doi\.org/",
         "",
         doi,
     )
+
 
     doi = (
         doi
@@ -130,6 +200,56 @@ def normalize_doi(value):
         .lower()
     )
 
+
+    return doi or None
+
+
+# =========================================================
+# Extract DOI from Lens citation external ID
+#
+# Example:
+#
+# DOI:10.1016/j.neucom.2013.03.029
+# MAGID:magid:1985230864
+# =========================================================
+
+DOI_PATTERN = re.compile(
+    r"(?i)\bDOI:\s*"
+    r"(10\.\d{4,9}/[^\s]+)"
+)
+
+
+def extract_lens_doi(value):
+
+    if pd.isna(value):
+
+        return None
+
+
+    text = str(
+        value
+    ).strip()
+
+
+    match = DOI_PATTERN.search(
+        text
+    )
+
+
+    if match is None:
+
+        return None
+
+
+    doi = (
+        match
+        .group(1)
+        .strip()
+        .rstrip(".,;")
+        .lower()
+    )
+
+
     return doi or None
 
 
@@ -137,27 +257,56 @@ def normalize_doi(value):
 # Validate input files
 # =========================================================
 
-for file in [
+required_files = [
     DOI_FILE,
     SCOPUS_FILE,
-]:
+    LENS_EXPORT_FILE,
+]
 
-    if not file.exists():
+
+for file_path in required_files:
+
+    if not file_path.exists():
 
         raise FileNotFoundError(
-            f"File not found: {file}"
+            f"File not found:\n"
+            f"{file_path}"
         )
 
 
-print("Project directory :", PROJECT_DIR)
-print("DOI file          :", DOI_FILE)
-print("Scopus file       :", SCOPUS_FILE)
-print("Output file       :", OUTPUT_FILE)
+print("PROJECT FILES")
+print("=" * 70)
+
+print(
+    "Project directory :",
+    PROJECT_DIR
+)
+
+print(
+    "DOI file          :",
+    DOI_FILE
+)
+
+print(
+    "Scopus file       :",
+    SCOPUS_FILE
+)
+
+print(
+    "Lens export       :",
+    LENS_EXPORT_FILE
+)
+
+print(
+    "Output file       :",
+    OUTPUT_FILE
+)
+
 print()
 
 
 # =========================================================
-# Read Lens patent-cited DOIs
+# Read Lens patent-cited DOI list
 # =========================================================
 
 raw_dois = (
@@ -168,10 +317,14 @@ raw_dois = (
     .splitlines()
 )
 
+
 lens_dois = [
-    normalize_doi(value)
+    normalize_doi(
+        value
+    )
     for value in raw_dois
 ]
+
 
 lens_dois = [
     doi
@@ -179,26 +332,27 @@ lens_dois = [
     if doi is not None
 ]
 
+
 lens_doi_set = set(
     lens_dois
 )
 
 
-print("Lens patent-cited DOI list")
-print("--------------------------")
+print("LENS PATENT-CITED DOI LIST")
+print("=" * 70)
 
 print(
-    f"DOI lines     : "
+    "DOI lines   :",
     f"{len(raw_dois):,}"
 )
 
 print(
-    f"Valid DOIs    : "
+    "Valid DOIs  :",
     f"{len(lens_dois):,}"
 )
 
 print(
-    f"Unique DOIs   : "
+    "Unique DOIs :",
     f"{len(lens_doi_set):,}"
 )
 
@@ -214,16 +368,16 @@ scopus = pd.read_excel(
 )
 
 
-print("Scopus full dataset")
-print("-------------------")
+print("SCOPUS FULL DATASET")
+print("=" * 70)
 
 print(
-    f"Documents : "
+    "Documents :",
     f"{len(scopus):,}"
 )
 
 print(
-    f"Columns   : "
+    "Columns   :",
     f"{len(scopus.columns):,}"
 )
 
@@ -231,27 +385,33 @@ print()
 
 
 # =========================================================
-# Validate required columns
+# Validate Scopus columns
 # =========================================================
 
-missing_columns = [
+missing_scopus_columns = [
     column
-    for column in OUTPUT_COLUMNS
+    for column in SCOPUS_OUTPUT_COLUMNS
     if column not in scopus.columns
 ]
 
-if missing_columns:
 
-    print("Available columns:")
+if missing_scopus_columns:
+
+    print(
+        "Available Scopus columns:"
+    )
 
     for column in scopus.columns:
+
         print(
-            f"  - {column}"
+            " -",
+            column
         )
 
+
     raise ValueError(
-        "Missing required columns: "
-        f"{missing_columns}"
+        "Missing required Scopus columns: "
+        f"{missing_scopus_columns}"
     )
 
 
@@ -259,10 +419,18 @@ if missing_columns:
 # Normalize Scopus DOI
 # =========================================================
 
-scopus = scopus.copy()
+scopus = (
+    scopus
+    .copy()
+)
 
-scopus["_doi_normalized"] = (
-    scopus["DOI"]
+
+scopus[
+    "_doi_normalized"
+] = (
+    scopus[
+        "DOI"
+    ]
     .apply(
         normalize_doi
     )
@@ -270,14 +438,352 @@ scopus["_doi_normalized"] = (
 
 
 # =========================================================
-# Select the Lens patent-cited publications
+# Read raw Lens PatCite export
+# =========================================================
+
+lens = pd.read_excel(
+    LENS_EXPORT_FILE
+)
+
+
+print("LENS PATCITE EXPORT")
+print("=" * 70)
+
+print(
+    "Rows    :",
+    f"{len(lens):,}"
+)
+
+print(
+    "Columns :",
+    f"{len(lens.columns):,}"
+)
+
+print()
+
+
+# =========================================================
+# Validate Lens columns
+# =========================================================
+
+missing_lens_columns = [
+    column
+    for column in LENS_REQUIRED_COLUMNS
+    if column not in lens.columns
+]
+
+
+if missing_lens_columns:
+
+    print(
+        "Available Lens columns:"
+    )
+
+    for column in lens.columns:
+
+        print(
+            " -",
+            column
+        )
+
+
+    raise ValueError(
+        "Missing required Lens columns: "
+        f"{missing_lens_columns}"
+    )
+
+
+# =========================================================
+# Extract Lens DOI
+# =========================================================
+
+lens = (
+    lens
+    .copy()
+)
+
+
+lens[
+    "_doi_normalized"
+] = (
+    lens[
+        LENS_EXTERNAL_ID_COLUMN
+    ]
+    .apply(
+        extract_lens_doi
+    )
+)
+
+
+# =========================================================
+# Lens DOI diagnostics
+# =========================================================
+
+lens_rows_with_doi = (
+    lens[
+        "_doi_normalized"
+    ]
+    .notna()
+    .sum()
+)
+
+
+lens_unique_dois = (
+    lens[
+        "_doi_normalized"
+    ]
+    .dropna()
+    .nunique()
+)
+
+
+lens_missing_dois = (
+    lens[
+        "_doi_normalized"
+    ]
+    .isna()
+    .sum()
+)
+
+
+print("LENS DOI EXTRACTION")
+print("=" * 70)
+
+print(
+    "Rows with DOI    :",
+    f"{lens_rows_with_doi:,}"
+)
+
+print(
+    "Unique DOIs      :",
+    f"{lens_unique_dois:,}"
+)
+
+print(
+    "Rows without DOI :",
+    f"{lens_missing_dois:,}"
+)
+
+print()
+
+
+# =========================================================
+# Verify Lens export and DOI list agree
+# =========================================================
+
+lens_export_doi_set = set(
+    lens[
+        "_doi_normalized"
+    ]
+    .dropna()
+)
+
+
+doi_list_only = (
+    lens_doi_set
+    -
+    lens_export_doi_set
+)
+
+
+lens_export_only = (
+    lens_export_doi_set
+    -
+    lens_doi_set
+)
+
+
+print("LENS DOI CONSISTENCY")
+print("=" * 70)
+
+print(
+    "DOI-list unique DOIs  :",
+    f"{len(lens_doi_set):,}"
+)
+
+print(
+    "Lens-export unique DOIs:",
+    f"{len(lens_export_doi_set):,}"
+)
+
+print(
+    "Only in DOI list       :",
+    f"{len(doi_list_only):,}"
+)
+
+print(
+    "Only in Lens export    :",
+    f"{len(lens_export_only):,}"
+)
+
+print()
+
+
+# =========================================================
+# Convert Lens patent metrics to numeric
+# =========================================================
+
+lens[
+    LENS_PATENT_COUNT_COLUMN
+] = pd.to_numeric(
+    lens[
+        LENS_PATENT_COUNT_COLUMN
+    ],
+    errors="coerce",
+)
+
+
+lens[
+    LENS_FAMILY_COUNT_COLUMN
+] = pd.to_numeric(
+    lens[
+        LENS_FAMILY_COUNT_COLUMN
+    ],
+    errors="coerce",
+)
+
+
+# =========================================================
+# Check duplicate Lens DOIs
+# =========================================================
+
+lens_duplicate_mask = (
+    lens[
+        "_doi_normalized"
+    ]
+    .notna()
+    &
+    lens[
+        "_doi_normalized"
+    ]
+    .duplicated(
+        keep=False
+    )
+)
+
+
+n_lens_duplicate_rows = int(
+    lens_duplicate_mask.sum()
+)
+
+
+print("LENS DUPLICATE DOI CHECK")
+print("=" * 70)
+
+print(
+    "Duplicate DOI rows:",
+    f"{n_lens_duplicate_rows:,}"
+)
+
+print()
+
+
+if n_lens_duplicate_rows > 0:
+
+    duplicate_lens = (
+        lens.loc[
+            lens_duplicate_mask,
+            [
+                "_doi_normalized",
+                LENS_PATENT_COUNT_COLUMN,
+                LENS_FAMILY_COUNT_COLUMN,
+            ],
+        ]
+        .sort_values(
+            "_doi_normalized"
+        )
+    )
+
+
+    print(
+        duplicate_lens.to_string(
+            index=False
+        )
+    )
+
+    print()
+
+
+# =========================================================
+# Prepare Lens patent-impact metrics
+#
+# If duplicate DOI rows unexpectedly occur, aggregate rather
+# than silently selecting one row.
+#
+# For identical scholarly works represented multiple times,
+# max() avoids double-counting an already aggregated Lens
+# patent-citation count.
+# =========================================================
+
+lens_metrics = (
+    lens[
+        [
+            "_doi_normalized",
+            LENS_PATENT_COUNT_COLUMN,
+            LENS_FAMILY_COUNT_COLUMN,
+        ]
+    ]
+    .dropna(
+        subset=[
+            "_doi_normalized"
+        ]
+    )
+    .groupby(
+        "_doi_normalized",
+        as_index=False,
+    )
+    .agg(
+        {
+            LENS_PATENT_COUNT_COLUMN:
+                "max",
+
+            LENS_FAMILY_COUNT_COLUMN:
+                "max",
+        }
+    )
+    .rename(
+        columns={
+            LENS_PATENT_COUNT_COLUMN:
+                "Patent citation count",
+
+            LENS_FAMILY_COUNT_COLUMN:
+                "Citing patent family count",
+        }
+    )
+)
+
+
+print("LENS PATENT METRICS")
+print("=" * 70)
+
+print(
+    "Metric rows:",
+    f"{len(lens_metrics):,}"
+)
+
+print(
+    "Missing patent counts:",
+    f"{lens_metrics['Patent citation count'].isna().sum():,}"
+)
+
+print(
+    "Missing family counts:",
+    f"{lens_metrics['Citing patent family count'].isna().sum():,}"
+)
+
+print()
+
+
+# =========================================================
+# Select Lens patent-cited publications from Scopus
 # =========================================================
 
 patent_cited = (
     scopus[
         scopus[
             "_doi_normalized"
-        ].isin(
+        ]
+        .isin(
             lens_doi_set
         )
     ]
@@ -286,7 +792,7 @@ patent_cited = (
 
 
 # =========================================================
-# Check matching
+# Check Scopus matching
 # =========================================================
 
 matched_dois = set(
@@ -296,32 +802,34 @@ matched_dois = set(
     .dropna()
 )
 
+
 unmatched_dois = (
     lens_doi_set
-    - matched_dois
+    -
+    matched_dois
 )
 
 
-print("DOI matching")
-print("------------")
+print("SCOPUS DOI MATCHING")
+print("=" * 70)
 
 print(
-    f"Requested DOIs : "
+    "Requested DOIs :",
     f"{len(lens_doi_set):,}"
 )
 
 print(
-    f"Matched DOIs   : "
+    "Matched DOIs   :",
     f"{len(matched_dois):,}"
 )
 
 print(
-    f"Matched rows   : "
+    "Matched rows   :",
     f"{len(patent_cited):,}"
 )
 
 print(
-    f"Unmatched DOIs : "
+    "Unmatched DOIs :",
     f"{len(unmatched_dois):,}"
 )
 
@@ -329,10 +837,10 @@ print()
 
 
 # =========================================================
-# Duplicate DOI check
+# Check duplicate Scopus DOI rows
 # =========================================================
 
-duplicate_mask = (
+scopus_duplicate_mask = (
     patent_cited[
         "_doi_normalized"
     ]
@@ -341,33 +849,36 @@ duplicate_mask = (
     )
 )
 
-n_duplicate_rows = (
-    duplicate_mask.sum()
+
+n_scopus_duplicate_rows = int(
+    scopus_duplicate_mask.sum()
 )
 
+
+print("SCOPUS DUPLICATE DOI CHECK")
+print("=" * 70)
+
 print(
-    f"Duplicate matched rows : "
-    f"{n_duplicate_rows:,}"
+    "Duplicate matched rows:",
+    f"{n_scopus_duplicate_rows:,}"
 )
 
 print()
 
 
-if n_duplicate_rows > 0:
-
-    print("Duplicated matched publications")
-    print("-------------------------------")
+if n_scopus_duplicate_rows > 0:
 
     print(
         patent_cited.loc[
-            duplicate_mask,
+            scopus_duplicate_mask,
             [
                 "Title",
                 "DOI",
+                "_doi_normalized",
             ],
         ]
         .sort_values(
-            "DOI"
+            "_doi_normalized"
         )
         .to_string(
             index=False
@@ -378,13 +889,15 @@ if n_duplicate_rows > 0:
 
 
 # =========================================================
-# Keep one scholarly publication per DOI
+# Keep one Scopus publication per DOI
 # =========================================================
 
 patent_cited = (
     patent_cited
     .drop_duplicates(
-        subset="_doi_normalized",
+        subset=[
+            "_doi_normalized"
+        ],
         keep="first",
     )
     .reset_index(
@@ -394,14 +907,138 @@ patent_cited = (
 
 
 # =========================================================
-# Keep requested columns only
+# Merge Lens patent-impact metrics into Scopus metadata
 # =========================================================
 
 patent_cited = (
+    patent_cited
+    .merge(
+        lens_metrics,
+        on="_doi_normalized",
+        how="left",
+        validate="one_to_one",
+    )
+)
+
+
+# =========================================================
+# Validate merged patent metrics
+# =========================================================
+
+missing_patent_metric = (
     patent_cited[
-        OUTPUT_COLUMNS
+        "Patent citation count"
+    ]
+    .isna()
+)
+
+
+missing_family_metric = (
+    patent_cited[
+        "Citing patent family count"
+    ]
+    .isna()
+)
+
+
+print("PATENT METRIC MERGE")
+print("=" * 70)
+
+print(
+    "Publications:",
+    f"{len(patent_cited):,}"
+)
+
+print(
+    "With patent citation count:",
+    f"{patent_cited['Patent citation count'].notna().sum():,}"
+)
+
+print(
+    "Missing patent citation count:",
+    f"{missing_patent_metric.sum():,}"
+)
+
+print(
+    "With patent family count:",
+    f"{patent_cited['Citing patent family count'].notna().sum():,}"
+)
+
+print(
+    "Missing patent family count:",
+    f"{missing_family_metric.sum():,}"
+)
+
+print()
+
+
+if missing_patent_metric.any():
+
+    print(
+        "Publications missing patent citation metrics:"
+    )
+
+    print(
+        patent_cited.loc[
+            missing_patent_metric,
+            [
+                "Title",
+                "DOI",
+                "_doi_normalized",
+            ],
+        ]
+        .to_string(
+            index=False
+        )
+    )
+
+    print()
+
+
+# =========================================================
+# Keep final requested columns
+# =========================================================
+
+FINAL_OUTPUT_COLUMNS = (
+    SCOPUS_OUTPUT_COLUMNS
+    +
+    LENS_OUTPUT_COLUMNS
+)
+
+
+patent_cited = (
+    patent_cited[
+        FINAL_OUTPUT_COLUMNS
     ]
     .copy()
+)
+
+
+# =========================================================
+# Sort output
+#
+# Highest patent-cited publications first.
+# This does not affect subsequent DOI-based analyses.
+# =========================================================
+
+patent_cited = (
+    patent_cited
+    .sort_values(
+        [
+            "Patent citation count",
+            "Citing patent family count",
+            "Year",
+        ],
+        ascending=[
+            False,
+            False,
+            True,
+        ],
+        na_position="last",
+    )
+    .reset_index(
+        drop=True
+    )
 )
 
 
@@ -416,44 +1053,158 @@ patent_cited.to_excel(
 
 
 # =========================================================
-# Final validation
+# Final corpus validation
 # =========================================================
 
-print("Final patent-cited scholarly corpus")
-print("-----------------------------------")
+print("FINAL PATENT-CITED SCHOLARLY CORPUS")
+print("=" * 70)
 
 print(
-    f"Documents         : "
+    "Documents        :",
     f"{len(patent_cited):,}"
 )
 
 print(
-    f"Columns           : "
+    "Columns          :",
     f"{len(patent_cited.columns):,}"
 )
 
 print(
-    f"With abstract     : "
+    "With abstract    :",
     f"{patent_cited['Abstract'].notna().sum():,}"
 )
 
 print(
-    f"Missing abstract  : "
+    "Missing abstract :",
     f"{patent_cited['Abstract'].isna().sum():,}"
 )
 
 print(
-    f"Unique DOI        : "
+    "Unique DOI       :",
     f"{patent_cited['DOI'].nunique():,}"
+)
+
+print(
+    "Patent counts    :",
+    f"{patent_cited['Patent citation count'].notna().sum():,}"
+)
+
+print(
+    "Family counts    :",
+    f"{patent_cited['Citing patent family count'].notna().sum():,}"
+)
+
+print()
+
+
+# =========================================================
+# Patent citation statistics
+# =========================================================
+
+print("PATENT CITATION STATISTICS")
+print("=" * 70)
+
+print(
+    "Total patent citations :",
+    f"{patent_cited['Patent citation count'].sum():,.0f}"
+)
+
+print(
+    "Mean per publication   :",
+    f"{patent_cited['Patent citation count'].mean():.2f}"
+)
+
+print(
+    "Median per publication :",
+    f"{patent_cited['Patent citation count'].median():.2f}"
+)
+
+print(
+    "Maximum                :",
+    f"{patent_cited['Patent citation count'].max():,.0f}"
 )
 
 print()
 
 print(
-    "Saved:"
+    "Total citing families  :",
+    f"{patent_cited['Citing patent family count'].sum():,.0f}"
 )
 
 print(
+    "Mean families/article  :",
+    f"{patent_cited['Citing patent family count'].mean():.2f}"
+)
+
+print(
+    "Median families/article:",
+    f"{patent_cited['Citing patent family count'].median():.2f}"
+)
+
+print(
+    "Maximum families       :",
+    f"{patent_cited['Citing patent family count'].max():,.0f}"
+)
+
+print()
+
+
+# =========================================================
+# Top patent-cited publications
+# =========================================================
+
+print("TOP 20 PATENT-CITED PUBLICATIONS")
+print("=" * 70)
+
+
+top_patent_cited = (
+    patent_cited[
+        [
+            "Title",
+            "Authors",
+            "Year",
+            "Source title",
+            "DOI",
+            "Patent citation count",
+            "Citing patent family count",
+            "Cited by",
+        ]
+    ]
+    .head(
+        20
+    )
+    .copy()
+)
+
+
+top_patent_cited.insert(
+    0,
+    "Rank",
+    range(
+        1,
+        len(top_patent_cited) + 1,
+    ),
+)
+
+
+print(
+    top_patent_cited.to_string(
+        index=False
+    )
+)
+
+print()
+
+
+# =========================================================
+# Save confirmation
+# =========================================================
+
+print("OUTPUT")
+print("=" * 70)
+
+print(
+    "Saved:",
     OUTPUT_FILE
 )
 
@@ -461,55 +1212,120 @@ print()
 
 
 # =========================================================
-# Expected result check
+# Strict expected-result checks
 # =========================================================
 
-if (
-    len(lens_doi_set) == 778
-    and
-    len(matched_dois) == 778
-    and
-    len(patent_cited) == 778
+errors = []
+
+
+if len(lens_doi_set) != 778:
+
+    errors.append(
+        "Expected 778 unique Lens DOIs, "
+        f"found {len(lens_doi_set):,}."
+    )
+
+
+if len(matched_dois) != len(
+    lens_doi_set
 ):
 
-    print("CHECK PASSED")
-    print("------------")
-
-    print(
-        "All 778 patent-cited scholarly "
-        "publications were recovered from "
-        "scopus_full.xlsx."
+    errors.append(
+        f"{len(unmatched_dois):,} Lens DOI(s) "
+        "were not recovered from Scopus."
     )
 
-elif len(matched_dois) == len(lens_doi_set):
 
-    print("CHECK PASSED")
-    print("------------")
+if len(patent_cited) != len(
+    lens_doi_set
+):
 
-    print(
-        "All Lens DOIs were recovered from "
-        "scopus_full.xlsx."
+    errors.append(
+        "Final scholarly corpus does not contain "
+        "one row per Lens DOI."
     )
 
-else:
+
+if patent_cited[
+    "DOI"
+].nunique() != len(
+    patent_cited
+):
+
+    errors.append(
+        "Final output contains duplicate DOI values."
+    )
+
+
+if patent_cited[
+    "Patent citation count"
+].isna().any():
+
+    errors.append(
+        "Some publications are missing "
+        "Patent citation count."
+    )
+
+
+if patent_cited[
+    "Citing patent family count"
+].isna().any():
+
+    errors.append(
+        "Some publications are missing "
+        "Citing patent family count."
+    )
+
+
+# =========================================================
+# Final status
+# =========================================================
+
+if errors:
 
     print("CHECK WARNING")
-    print("-------------")
+    print("=" * 70)
 
-    print(
-        f"{len(unmatched_dois):,} DOI(s) "
-        f"were not matched."
-    )
+    for error in errors:
+
+        print(
+            " -",
+            error
+        )
+
 
     if unmatched_dois:
 
         print()
-        print("Unmatched DOIs:")
+        print(
+            "Unmatched Lens DOIs:"
+        )
 
         for doi in sorted(
             unmatched_dois
         ):
 
             print(
+                " -",
                 doi
             )
+
+else:
+
+    print("CHECK PASSED")
+    print("=" * 70)
+
+    print(
+        "All Lens patent-cited scholarly publications "
+        "were recovered from Scopus."
+    )
+
+    print(
+        "All publications were matched to Lens patent "
+        "citation and patent-family metrics."
+    )
+
+    print(
+        "The final output contains one unique scholarly "
+        "publication per DOI."
+    )
