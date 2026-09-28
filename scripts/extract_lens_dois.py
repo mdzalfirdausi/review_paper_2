@@ -42,6 +42,11 @@ OUTPUT_FILE = (
     / "lens_patent_cited_dois.txt"
 )
 
+LENS_EXPORT_FILE = (
+    LENS_DIR
+    / "lenspatcite-export-mdzalfirdausi-52137fc2-30dc-4652-b8cb-a052ce9c5442-2026-09-27_06-13-55.xlsx"
+)
+
 # Lens column containing DOI + other identifiers.
 EXTERNAL_ID_COLUMN = (
     "citation external id"
