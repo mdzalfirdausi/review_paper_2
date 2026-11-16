@@ -136,7 +136,11 @@ def compact_journals(journals):
     keep = set()
     for c in ranked.columns:
         keep.update(ranked.nlargest(10, c).index)
-    shown = ranked.loc[ranked.index.isin(keep)].sort_values('Combined score', ascending=False)
+    shown = (
+        ranked.loc[ranked.index.isin(keep)]
+        .sort_values('Combined score', ascending=False)
+        .head(20)
+    )
     abbreviations = {
         'IEEE Transactions on Power Systems': 'IEEE Trans. Power Systems',
         'IEEE Transactions on Smart Grid': 'IEEE Trans. Smart Grid',
